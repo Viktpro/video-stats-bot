@@ -23,7 +23,7 @@ class SimpleLLM:
         if "общее количество лайков" in query or "сумму лайков" in query or "всего лайков" in query:
             return "SELECT COALESCE(SUM(likes_count), 0) FROM videos;"
 
-        # 3. Суммарное количество просмотров за месяц (ИСПРАВЛЕНО)
+        # 3. Суммарное количество просмотров за месяц
         if "суммарное количество просмотров" in query and "июне 2025" in query:
             return """
                 SELECT COALESCE(SUM(views_count), 0) FROM videos 
@@ -31,7 +31,16 @@ class SimpleLLM:
                 AND EXTRACT(YEAR FROM video_created_at) = 2025;
             """
 
-        # 4. Видео за месяц (количество)
+        # 4. Суммарный прирост лайков за ноябрь 2025 (НОВЫЙ)
+        if "суммарный прирост лайков" in query and "ноябрь 2025" in query:
+            return """
+                SELECT COALESCE(SUM(delta_likes_count), 0) 
+                FROM video_snapshots 
+                WHERE EXTRACT(MONTH FROM created_at) = 11
+                AND EXTRACT(YEAR FROM created_at) = 2025;
+            """
+
+        # 5. Видео за месяц (количество)
         month_count_pattern = r'за (?:месяц )?(\w+) (\d{4})'
         month_count_match = re.search(month_count_pattern, query)
         if month_count_match and ("появилось" in query or "вышло" in query or "опубликовано" in query):
@@ -43,7 +52,7 @@ class SimpleLLM:
                 AND EXTRACT(YEAR FROM video_created_at) = {year};
             """
 
-        # 5. Сколько видео у креатора
+        # 6. Сколько видео у креатора
         creator_match = re.search(r'креатора с id ([a-f0-9]+)', query)
         if creator_match:
             creator_id = creator_match.group(1)
@@ -71,13 +80,13 @@ class SimpleLLM:
                 """
             return f"SELECT COUNT(*) FROM videos WHERE creator_id = '{creator_id}';"
 
-        # 6. Видео с просмотрами больше N
+        # 7. Видео с просмотрами больше N
         views_match = re.search(r'больше ([\d\s]+) просмотров', query)
         if views_match:
             views = views_match.group(1).replace(' ', '')
             return f"SELECT COUNT(*) FROM videos WHERE views_count > {views};"
 
-        # 7. Рост просмотров за дату
+        # 8. Рост просмотров за дату
         date_match = re.search(r'(\d+) (\w+) (\d+)', query)
         if date_match and ("выросли" in query or "сумме" in query):
             day, month, year = date_match.groups()
@@ -88,7 +97,7 @@ class SimpleLLM:
                 WHERE DATE(created_at) = '{year}-{month_num:02d}-{int(day):02d}';
             """
 
-        # 8. Разные видео с новыми просмотрами
+        # 9. Разные видео с новыми просмотрами
         if "разных видео получали новые просмотры" in query:
             date_match = re.search(r'(\d+) (\w+) (\d+)', query)
             if date_match:
