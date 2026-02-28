@@ -1,5 +1,5 @@
-services:
-  db:
+﻿services:
+  postgres:
     image: postgres:15
     container_name: video_stats_db
     environment:
@@ -9,24 +9,25 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - ./migrations/init.sql:/docker-entrypoint-initdb.d/init.sql
       - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
 
   bot:
     build: .
     container_name: video_stats_bot
     depends_on:
-      db:
+      postgres:
         condition: service_healthy
-    env_file:
-      - .env
     environment:
-      DB_HOST: db
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/video_stats
+      BOT_TOKEN: 
+      GIGACHAT_CREDENTIALS: 
     volumes:
       - ./data:/app/data
     restart: unless-stopped

@@ -1,5 +1,7 @@
-aiogram==3.4.1
+﻿aiogram==3.4.1
 asyncpg==0.29.0
+pandas==2.2.0
 python-dotenv==1.0.0
-aiofiles==23.2.1
-gigachat==0.1.6
+aiohttp==3.9.1
+psycopg2-binary==2.9.9
+certifi==2024.2.2
