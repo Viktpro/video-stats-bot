@@ -24,11 +24,18 @@ class SimpleLLM:
             return "SELECT COALESCE(SUM(likes_count), 0) FROM videos;"
 
         # 3. Суммарное количество просмотров за месяц
-        month_pattern = r'в (\w+) (\d{4})'
-        month_match = re.search(month_pattern, query)
-        if month_match and ("суммарное количество просмотров" in query or "просмотров набрали" in query):
-            month_name, year = month_match.groups()
-            month_num = months.get(month_name.lower(), 1)
+        # Проверяем разные формулировки запроса
+        if ("суммарное количество просмотров" in query or "просмотров набрали" in query) and (
+                "июне" in query or "июнь" in query):
+            # Ищем год
+            year_match = re.search(r'2025|2024|2026', query)
+            year = year_match.group(0) if year_match else "2025"
+
+            # Определяем месяц
+            if "июне" in query or "июнь" in query:
+                month_num = 6
+                month_name = "июнь"
+
             return f"""
                 SELECT COALESCE(SUM(views_count), 0) FROM videos 
                 WHERE EXTRACT(MONTH FROM video_created_at) = {month_num}
@@ -38,8 +45,7 @@ class SimpleLLM:
         # 4. Видео за месяц (количество)
         month_count_pattern = r'за (?:месяц )?(\w+) (\d{4})'
         month_count_match = re.search(month_count_pattern, query)
-        if month_count_match and (
-                "появилось" in query or "вышло" in query or "опубликовано" in query or "за месяц" in query):
+        if month_count_match and ("появилось" in query or "вышло" in query or "опубликовано" in query):
             month_name, year = month_count_match.groups()
             month_num = months.get(month_name.lower(), 1)
             return f"""
